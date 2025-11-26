@@ -48,8 +48,22 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ apiBaseU
       });
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody.error || "Failed to save profile");
+        const rawText = await response.text();
+        console.log("PROFILE_SAVE_ERROR", response.status, rawText);
+
+        let message = "Failed to save profile";
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed && typeof parsed === "object" && "error" in parsed && parsed.error) {
+            message = String(parsed.error);
+          }
+        } catch {
+          if (rawText) {
+            message = rawText;
+          }
+        }
+
+        throw new Error(message);
       }
 
       const profile: UserProfile = await response.json();
