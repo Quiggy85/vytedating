@@ -2,7 +2,7 @@
   "name": "@vyte/mobile",
   "private": true,
   "version": "0.0.1",
-  "main": "index.js",
+  "main": "expo/AppEntry.js",
   "scripts": {
     "dev": "expo start",
     "lint": "eslint src --ext .ts,.tsx"
