@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
-    "@vyte/shared": "0.0.1",
+    "@vyte/shared": "workspace:*",
     "@vercel/node": "^3.0.0"
   },
   "devDependencies": {

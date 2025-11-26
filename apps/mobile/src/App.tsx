@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { supabase } from "./lib/supabaseClient";
-import type { UserProfile } from "@vyte/shared";
+import type { UserProfile, FeatureEntitlements } from "@vyte/shared";
 import { AuthScreen } from "./screens/AuthScreen";
 import { ProfileSetupScreen } from "./screens/ProfileSetupScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -12,8 +12,12 @@ type AppStage = "loading" | "auth" | "profile" | "home";
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
 
 export default function App() {
+  console.log("API:", process.env.EXPO_PUBLIC_API_BASE_URL);
+console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
+
   const [stage, setStage] = useState<AppStage>("loading");
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [entitlements, setEntitlements] = useState<FeatureEntitlements | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -38,6 +42,24 @@ export default function App() {
         if (res.ok) {
           const p: UserProfile = await res.json();
           setProfile(p);
+
+          // Fetch entitlements in parallel
+          try {
+            const entRes = await fetch(`${API_BASE_URL}/me/entitlements`, {
+              headers: {
+                Authorization: `Bearer ${data.session.access_token}`,
+              },
+            });
+
+            if (entRes.ok) {
+              const entJson = await entRes.json();
+              setEntitlements(entJson.entitlements as FeatureEntitlements);
+              console.log("Entitlements", entJson);
+            }
+          } catch {
+            // ignore entitlements error for now
+          }
+
           setStage("home");
         } else if (res.status === 404) {
           setStage("profile");
