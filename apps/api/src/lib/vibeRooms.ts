@@ -115,14 +115,40 @@ export async function getVibeRoomWithMembers(roomId: string): Promise<VibeRoomWi
   if (roomError) throw new Error(roomError.message);
   if (!room) return null;
 
-  const { data: members, error: membersError } = await supabaseServer
+  const { data: memberRows, error: membersError } = await supabaseServer
     .from("vibe_room_members")
-    .select(
-      "room_id, user_id, joined_at, last_seen_at, profile:user_profiles!inner(id, display_name, birthdate, gender, bio, location_lat, location_lng, location_city, location_country, created_at, updated_at)",
-    )
+    .select("room_id, user_id, joined_at, last_seen_at")
     .eq("room_id", roomId);
 
   if (membersError) throw new Error(membersError.message);
+
+  if (!memberRows || memberRows.length === 0) {
+    return {
+      id: room.id,
+      city: room.city,
+      country: room.country,
+      intent: room.intent,
+      createdAt: room.created_at,
+      isActive: room.is_active,
+      members: [],
+    };
+  }
+
+  const userIds = Array.from(new Set(memberRows.map((m: any) => m.user_id)));
+
+  const { data: profileRows, error: profilesError } = await supabaseServer
+    .from("user_profiles")
+    .select(
+      "id, display_name, birthdate, gender, bio, location_lat, location_lng, location_city, location_country, created_at, updated_at",
+    )
+    .in("id", userIds);
+
+  if (profilesError) throw new Error(profilesError.message);
+
+  const profilesById = new Map<string, any>();
+  for (const p of (profileRows as any[]) || []) {
+    profilesById.set(p.id, p);
+  }
 
   return {
     id: room.id,
@@ -131,27 +157,30 @@ export async function getVibeRoomWithMembers(roomId: string): Promise<VibeRoomWi
     intent: room.intent,
     createdAt: room.created_at,
     isActive: room.is_active,
-    members:
-      members?.map((m: any) => ({
+    members: memberRows.map((m: any) => {
+      const profileRow = profilesById.get(m.user_id) || null;
+
+      return {
         roomId: m.room_id,
         userId: m.user_id,
         joinedAt: m.joined_at,
         lastSeenAt: m.last_seen_at,
-        profile: m.profile
+        profile: profileRow
           ? {
-              id: m.profile.id,
-              displayName: m.profile.display_name ?? "",
-              birthdate: m.profile.birthdate ?? null,
-              gender: m.profile.gender ?? "",
-              bio: m.profile.bio ?? null,
-              locationLat: m.profile.location_lat,
-              locationLng: m.profile.location_lng,
-              locationCity: m.profile.location_city,
-              locationCountry: m.profile.location_country,
-              createdAt: m.profile.created_at,
-              updatedAt: m.profile.updated_at,
+              id: profileRow.id,
+              displayName: profileRow.display_name ?? "",
+              birthdate: profileRow.birthdate ?? null,
+              gender: profileRow.gender ?? "",
+              bio: profileRow.bio ?? null,
+              locationLat: profileRow.location_lat,
+              locationLng: profileRow.location_lng,
+              locationCity: profileRow.location_city,
+              locationCountry: profileRow.location_country,
+              createdAt: profileRow.created_at,
+              updatedAt: profileRow.updated_at,
             }
           : null,
-      })) ?? [],
+      };
+    }),
   };
 }
