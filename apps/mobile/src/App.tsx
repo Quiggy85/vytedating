@@ -1,23 +1,45 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { supabase } from "./lib/supabaseClient";
-import type { UserProfile, FeatureEntitlements } from "@vyte/shared";
+import type {
+  UserProfile,
+  FeatureEntitlements,
+  SubscriptionTier,
+  IntentType,
+  UserIntent,
+  VibeRoomWithMembers,
+} from "@vyte/shared";
 import { AuthScreen } from "./screens/AuthScreen";
 import { ProfileSetupScreen } from "./screens/ProfileSetupScreen";
 import { HomeScreen } from "./screens/HomeScreen";
+import {
+  API_BASE_URL,
+  fetchEntitlements,
+  setUserIntent,
+  fetchNearbyIntents,
+  joinVibeRoomApi,
+  leaveVibeRoomApi,
+  fetchActiveVibeRoom,
+} from "./lib/api";
 
 type AppStage = "loading" | "auth" | "profile" | "home";
 
-// Configure this to point to your deployed API base URL, e.g. https://vyte-api.vercel.app/api
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
-
 export default function App() {
   console.log("API:", process.env.EXPO_PUBLIC_API_BASE_URL);
-console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
+  console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
 
   const [stage, setStage] = useState<AppStage>("loading");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [entitlements, setEntitlements] = useState<FeatureEntitlements | null>(null);
+  const [tier, setTier] = useState<SubscriptionTier | null>(null);
+  const [currentIntent, setCurrentIntent] = useState<IntentType>("NONE");
+  const [nearbyIntents, setNearbyIntents] = useState<
+    Array<{
+      profile: UserProfile;
+      intent: UserIntent;
+    }>
+  >([]);
+  const [activeVibeRoom, setActiveVibeRoom] = useState<VibeRoomWithMembers | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -33,9 +55,11 @@ console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
       }
 
       try {
+        const token = data.session.access_token;
+
         const res = await fetch(`${API_BASE_URL}/me`, {
           headers: {
-            Authorization: `Bearer ${data.session.access_token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -43,23 +67,29 @@ console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
           const p: UserProfile = await res.json();
           setProfile(p);
 
-          // Fetch entitlements in parallel
-          try {
-            const entRes = await fetch(`${API_BASE_URL}/me/entitlements`, {
-              headers: {
-                Authorization: `Bearer ${data.session.access_token}`,
-              },
+          // Fetch entitlements and active vibe room in parallel, but do not block navigation to Home
+          fetchEntitlements(token)
+            .then((result) => {
+              setEntitlements(result.entitlements);
+              setTier(result.tier);
+              console.log("Entitlements", result);
+            })
+            .catch((error) => {
+              console.warn("Failed to fetch entitlements", error);
             });
 
-            if (entRes.ok) {
-              const entJson = await entRes.json();
-              setEntitlements(entJson.entitlements as FeatureEntitlements);
-              console.log("Entitlements", entJson);
-            }
-          } catch {
-            // ignore entitlements error for now
-          }
+          fetchActiveVibeRoom(token)
+            .then((room) => {
+              setActiveVibeRoom(room);
+            })
+            .catch((error) => {
+              console.warn("Failed to fetch active vibe room", error);
+            })
+            .finally(() => {
+              setStage("home");
+            });
 
+          // Optimistically go to home even before async calls resolve
           setStage("home");
         } else if (res.status === 404) {
           setStage("profile");
@@ -73,6 +103,43 @@ console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
 
     bootstrap();
   }, []);
+
+  const handleChangeIntent = useCallback(
+    async (intent: IntentType) => {
+      if (!supabase) return;
+
+      // Optimistic local update
+      setCurrentIntent(intent);
+      if (intent === "NONE") {
+        setNearbyIntents([]);
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.warn("No session when changing intent");
+        return;
+      }
+
+      const token = data.session.access_token;
+
+      try {
+        if (intent !== "NONE") {
+          await setUserIntent(token, intent);
+          const results = await fetchNearbyIntents(token, intent);
+          setNearbyIntents(results);
+
+          const room = await joinVibeRoomApi(token, intent);
+          setActiveVibeRoom(room);
+        } else {
+          await leaveVibeRoomApi(token);
+          setActiveVibeRoom(null);
+        }
+      } catch (error) {
+        console.warn("Failed to update intent or fetch nearby intents", error);
+      }
+    },
+    [],
+  );
 
   if (stage === "loading") {
     return (
@@ -104,7 +171,16 @@ console.log("SUPABASE:", process.env.EXPO_PUBLIC_SUPABASE_URL);
     );
   }
 
-  return <HomeScreen />;
+  return (
+    <HomeScreen
+      profile={profile}
+      entitlements={entitlements}
+      currentIntent={currentIntent}
+      onChangeIntent={handleChangeIntent}
+      nearbyIntents={nearbyIntents}
+      activeVibeRoom={activeVibeRoom}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
