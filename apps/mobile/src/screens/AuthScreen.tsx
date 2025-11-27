@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Alert, View, Text } from "react-native";
+import { StyleSheet, Alert, View, Text, ScrollView } from "react-native";
 import { supabase } from "../lib/supabaseClient";
 import {
   VyteCard,
@@ -60,7 +60,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
 
   return (
     <VyteScreenContainer>
-      <View style={styles.root}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.heroSection}>
           <VyteTitleBlock
             title="Vyte"
@@ -80,7 +83,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
 
         <View style={styles.accentStrip} />
 
-        <VyteCard>
+        <VyteCard style={styles.formCard}>
           <View style={styles.formHeader}>
             <Text style={styles.formTitle}>
               {mode === "signup" ? "Create account" : "Welcome back"}
@@ -123,18 +126,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
             </Text>
           </View>
         </VyteCard>
-      </View>
+      </ScrollView>
     </VyteScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "space-between",
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "flex-start",
+    paddingHorizontal: 0,
+    paddingVertical: vyteSpacing.lg,
   },
   heroSection: {
-    marginBottom: vyteSpacing.lg,
+    marginTop: vyteSpacing.lg,
+    marginBottom: vyteSpacing.xl,
   },
   heroChipsRow: {
     flexDirection: "row",
@@ -151,7 +157,11 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: vyteColors.accent,
     borderRadius: vyteRadii.xs,
-    marginBottom: vyteSpacing.lg,
+    marginVertical: vyteSpacing.md,
+  },
+  formCard: {
+    marginTop: vyteSpacing.md,
+    marginBottom: vyteSpacing.xl,
   },
   formHeader: {
     marginBottom: vyteSpacing.md,
