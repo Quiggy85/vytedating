@@ -1,7 +1,15 @@
 import React, { useState } from "react";
-import { StyleSheet, Alert, View } from "react-native";
+import { StyleSheet, Alert, View, Text } from "react-native";
 import { supabase } from "../lib/supabaseClient";
-import { VyteCard, VyteButton, VyteInput, VyteScreenContainer, VyteTitleBlock } from "../components";
+import {
+  VyteCard,
+  VyteButton,
+  VyteInput,
+  VyteScreenContainer,
+  VyteTitleBlock,
+  VyteChip,
+} from "../components";
+import { vyteColors, vyteSpacing, vyteTypography, vyteRadii } from "../theme/vyteTheme";
 
 interface AuthScreenProps {
   onAuthenticated: () => void;
@@ -52,50 +60,123 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
 
   return (
     <VyteScreenContainer>
-      <VyteCard>
-        <VyteTitleBlock
-          title="Vyte"
-          subtitle={mode === "signup" ? "Create account" : "Welcome back"}
-        />
-
-        <VyteInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-        />
-
-        <VyteInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholder="••••••••"
-        />
-
-        <View style={styles.buttonStack}>
-          <VyteButton
-            label={loading ? "Please wait" : mode === "signup" ? "Sign up" : "Log in"}
-            onPress={handleAuth}
-            disabled={loading}
+      <View style={styles.root}>
+        <View style={styles.heroSection}>
+          <VyteTitleBlock
+            title="Vyte"
+            subtitle="Real-time vibes. Meet people who want what you want, right now."
           />
-          <VyteButton
-            label={
-              mode === "signup" ? "Already have an account? Log in" : "New here? Create an account"
-            }
-            onPress={() => setMode(mode === "signup" ? "login" : "signup")}
-            variant="ghost"
-          />
+
+          <View style={styles.heroChipsRow}>
+            <VyteChip label="Intent-based matching" />
+            <VyteChip label="Vibe rooms near you" />
+            <VyteChip label="Meet halfway" />
+          </View>
+
+          <Text style={styles.heroDescription}>
+            Set your vibe, see who's nearby, and meet in places that work for both of you.
+          </Text>
         </View>
-      </VyteCard>
+
+        <View style={styles.accentStrip} />
+
+        <VyteCard>
+          <View style={styles.formHeader}>
+            <Text style={styles.formTitle}>
+              {mode === "signup" ? "Create account" : "Welcome back"}
+            </Text>
+          </View>
+
+          <VyteInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+          />
+
+          <VyteInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholder="••••••••"
+          />
+
+          <View style={styles.buttonStack}>
+            <VyteButton
+              label={loading ? "Please wait" : mode === "signup" ? "Sign up" : "Log in"}
+              onPress={handleAuth}
+              disabled={loading}
+            />
+          </View>
+
+          <View style={styles.modeToggleRow}>
+            <Text style={styles.modeToggleText}>
+              {mode === "signup" ? "Already have an account? " : "New here? "}
+            </Text>
+            <Text
+              style={styles.modeToggleLink}
+              onPress={() => setMode(mode === "signup" ? "login" : "signup")}
+            >
+              {mode === "signup" ? "Log in" : "Create an account"}
+            </Text>
+          </View>
+        </VyteCard>
+      </View>
     </VyteScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  heroSection: {
+    marginBottom: vyteSpacing.lg,
+  },
+  heroChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: vyteSpacing.sm,
+    gap: vyteSpacing.sm,
+  },
+  heroDescription: {
+    marginTop: vyteSpacing.md,
+    color: vyteColors.textMuted,
+    fontSize: vyteTypography.body,
+  },
+  accentStrip: {
+    height: 2,
+    backgroundColor: vyteColors.accent,
+    borderRadius: vyteRadii.xs,
+    marginBottom: vyteSpacing.lg,
+  },
+  formHeader: {
+    marginBottom: vyteSpacing.md,
+  },
+  formTitle: {
+    fontSize: vyteTypography.subtitle,
+    color: vyteColors.textPrimary,
+    fontWeight: "600",
+  },
   buttonStack: {
-    marginTop: 24,
-    gap: 12,
+    marginTop: vyteSpacing.lg,
+  },
+  modeToggleRow: {
+    marginTop: vyteSpacing.md,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modeToggleText: {
+    color: vyteColors.textSecondary,
+    fontSize: vyteTypography.caption,
+  },
+  modeToggleLink: {
+    color: vyteColors.accent,
+    fontSize: vyteTypography.caption,
+    fontWeight: "600",
   },
 });
