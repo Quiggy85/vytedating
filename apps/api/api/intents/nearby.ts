@@ -113,6 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     console.error("/api/intents/nearby error", err);
-    res.status(500).json({ error: "Unexpected error" });
+
+    const message = err instanceof Error && err.message ? err.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 }
