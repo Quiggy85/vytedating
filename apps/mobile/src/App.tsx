@@ -40,69 +40,65 @@ export default function App() {
     }>
   >([]);
   const [activeVibeRoom, setActiveVibeRoom] = useState<VibeRoomWithMembers | null>(null);
+  const bootstrap = useCallback(async () => {
+    if (!supabase) {
+      setStage("auth");
+      return;
+    }
+
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      setStage("auth");
+      return;
+    }
+
+    const token = data.session.access_token;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const p: UserProfile = await res.json();
+        setProfile(p);
+
+        // Fetch entitlements and active vibe room in parallel, but do not block navigation to Home
+        fetchEntitlements(token)
+          .then((result) => {
+            setEntitlements(result.entitlements);
+            setTier(result.tier);
+            console.log("Entitlements", result);
+          })
+          .catch((error) => {
+            console.warn("Failed to fetch entitlements", error);
+          });
+
+        fetchActiveVibeRoom(token)
+          .then((room) => {
+            setActiveVibeRoom(room);
+          })
+          .catch((error) => {
+            console.warn("Failed to fetch active vibe room", error);
+          });
+
+        // Navigate to home once we know the profile exists
+        setStage("home");
+      } else if (res.status === 404) {
+        setStage("profile");
+      } else {
+        setStage("auth");
+      }
+    } catch {
+      setStage("auth");
+    }
+  }, []);
 
   useEffect(() => {
-    const bootstrap = async () => {
-      if (!supabase) {
-        setStage("auth");
-        return;
-      }
-
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        setStage("auth");
-        return;
-      }
-
-      try {
-        const token = data.session.access_token;
-
-        const res = await fetch(`${API_BASE_URL}/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.ok) {
-          const p: UserProfile = await res.json();
-          setProfile(p);
-
-          // Fetch entitlements and active vibe room in parallel, but do not block navigation to Home
-          fetchEntitlements(token)
-            .then((result) => {
-              setEntitlements(result.entitlements);
-              setTier(result.tier);
-              console.log("Entitlements", result);
-            })
-            .catch((error) => {
-              console.warn("Failed to fetch entitlements", error);
-            });
-
-          fetchActiveVibeRoom(token)
-            .then((room) => {
-              setActiveVibeRoom(room);
-            })
-            .catch((error) => {
-              console.warn("Failed to fetch active vibe room", error);
-            })
-            .finally(() => {
-              setStage("home");
-            });
-
-          // Optimistically go to home even before async calls resolve
-          setStage("home");
-        } else if (res.status === 404) {
-          setStage("profile");
-        } else {
-          setStage("auth");
-        }
-      } catch {
-        setStage("auth");
-      }
-    };
-
     bootstrap();
-  }, []);
+  }, [bootstrap]);
 
   const handleChangeIntent = useCallback(
     async (intent: IntentType) => {
@@ -153,7 +149,8 @@ export default function App() {
     return (
       <AuthScreen
         onAuthenticated={() => {
-          setStage("profile");
+          // After auth, re-run the same logic we use on cold start
+          bootstrap();
         }}
       />
     );
