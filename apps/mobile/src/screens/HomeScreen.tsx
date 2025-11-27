@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import type { UserProfile, FeatureEntitlements, IntentType, UserIntent, VibeRoomWithMembers } from "@vyte/shared";
+import { VyteCard, VyteChip, VyteScreenContainer, VyteSection, VyteTitleBlock } from "../components";
+import { vyteColors, vyteSpacing, vyteTypography, vyteRadii } from "../theme/vyteTheme";
 
 interface HomeScreenProps {
   profile: UserProfile | null;
@@ -31,35 +33,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   activeVibeRoom,
 }) => {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Home</Text>
-        <Text style={styles.subtitle}>
-          {profile?.displayName
-            ? `Welcome back, ${profile.displayName}`
-            : "Your Vyte experience will live here soon."}
-        </Text>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What are you in the mood for?</Text>
-          <View style={styles.chipRow}>
-            {INTENT_CHIPS.map((chip) => {
-              const selected = chip.value === currentIntent;
-              return (
-                <TouchableOpacity
-                  key={chip.value}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  onPress={() => onChangeIntent(chip.value)}
-                >
-                  <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
-                    {chip.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+    <VyteScreenContainer>
+      <VyteCard style={styles.card}>
+        <VyteTitleBlock
+          title="Home"
+          subtitle={
+            profile?.displayName
+              ? `Welcome back, ${profile.displayName}`
+              : "Your Vyte experience will live here soon."
+          }
+        />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vibe Room</Text>
+        <VyteSection title="What are you in the mood for?">
+          <View style={styles.chipRow}>
+            {INTENT_CHIPS.map((chip) => (
+              <VyteChip
+                key={chip.value}
+                label={chip.label}
+                selected={chip.value === currentIntent}
+                onPress={() => onChangeIntent(chip.value)}
+                style={styles.chip}
+              />
+            ))}
+          </View>
+        </VyteSection>
+
+        <VyteSection title="Vibe Room">
           {currentIntent === "NONE" || !activeVibeRoom ? (
             <Text style={styles.sectionValue}>Set a vibe above to join a room.</Text>
           ) : (
@@ -73,12 +72,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       .join(", ") || "Somewhere nearby"}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.leaveButton}
-                  onPress={() => onChangeIntent("NONE")}
-                >
-                  <Text style={styles.leaveButtonLabel}>Leave</Text>
-                </TouchableOpacity>
+                <View style={styles.leaveButton}>
+                  <Text style={styles.leaveButtonLabel} onPress={() => onChangeIntent("NONE")}>
+                    Leave
+                  </Text>
+                </View>
               </View>
               <View style={styles.vibeMembersBox}>
                 {activeVibeRoom.members.length === 0 ? (
@@ -102,11 +100,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </View>
             </View>
           )}
-        </View>
-        </View>
+        </VyteSection>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nearby Vytes</Text>
+        <VyteSection title="Nearby Vytes">
           {nearbyIntents.length === 0 ? (
             <Text style={styles.sectionValue}>No one nearby with this vibe yet.</Text>
           ) : (
@@ -124,10 +120,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               ))}
             </ScrollView>
           )}
-        </View>
+        </VyteSection>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Entitlements (debug)</Text>
+        <VyteSection title="Entitlements (debug)">
           <View style={styles.entitlementsBox}>
             <ScrollView>
               <Text style={styles.entitlementsText}>
@@ -135,175 +130,138 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </Text>
             </ScrollView>
           </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        </VyteSection>
+      </VyteCard>
+    </VyteScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060608",
-    paddingHorizontal: 24,
-    paddingVertical: 24,
   },
   card: {
-    backgroundColor: "#101018",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    padding: 24,
     flex: 1,
   },
-  title: {
-    fontSize: 24,
-    color: "#F5F5FA",
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#A5A7C2",
-    marginBottom: 24,
-  },
   section: {
-    marginBottom: 16,
+    marginBottom: vyteSpacing.lg,
   },
   sectionTitle: {
-    fontSize: 12,
-    color: "#A5A7C2",
-    marginBottom: 4,
+    fontSize: vyteTypography.label,
+    color: vyteColors.textSecondary,
+    marginBottom: vyteSpacing.xs,
   },
   sectionValue: {
-    fontSize: 14,
-    color: "#F5F5FA",
+    fontSize: vyteTypography.body,
+    color: vyteColors.textPrimary,
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
-    gap: 8,
+    marginTop: vyteSpacing.sm,
+    gap: vyteSpacing.sm,
   },
   chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "#151521",
-  },
-  chipSelected: {
-    backgroundColor: "#FF4F5E",
-    borderColor: "#FF4F5E",
-  },
-  chipLabel: {
-    fontSize: 12,
-    color: "#A5A7C2",
-  },
-  chipLabelSelected: {
-    color: "#F5F5FA",
-    fontWeight: "600",
   },
   nearbyList: {
     maxHeight: 200,
-    marginTop: 8,
+    marginTop: vyteSpacing.sm,
   },
   nearbyCard: {
-    backgroundColor: "#151521",
-    borderRadius: 3,
+    backgroundColor: vyteColors.surfaceMuted,
+    borderRadius: vyteRadii.sm,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    padding: 10,
-    marginBottom: 8,
+    borderColor: vyteColors.borderSubtle,
+    padding: vyteSpacing.sm,
+    marginBottom: vyteSpacing.sm,
   },
   nearbyName: {
-    fontSize: 14,
-    color: "#F5F5FA",
+    fontSize: vyteTypography.body,
+    color: vyteColors.textPrimary,
     fontWeight: "600",
     marginBottom: 2,
   },
   nearbyLocation: {
-    fontSize: 12,
-    color: "#A5A7C2",
-    marginBottom: 4,
+    fontSize: vyteTypography.label,
+    color: vyteColors.textSecondary,
+    marginBottom: vyteSpacing.xs,
   },
   nearbyIntent: {
-    fontSize: 12,
-    color: "#FF4F5E",
+    fontSize: vyteTypography.label,
+    color: vyteColors.accent,
   },
   vibeCard: {
-    marginTop: 8,
-    backgroundColor: "#151521",
-    borderRadius: 3,
+    marginTop: vyteSpacing.sm,
+    backgroundColor: vyteColors.surfaceMuted,
+    borderRadius: vyteRadii.sm,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    padding: 10,
+    borderColor: vyteColors.borderStrong,
+    padding: vyteSpacing.sm,
   },
   vibeHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: vyteSpacing.sm,
   },
   vibeTitle: {
-    fontSize: 14,
-    color: "#F5F5FA",
+    fontSize: vyteTypography.body,
+    color: vyteColors.textPrimary,
     fontWeight: "600",
   },
   vibeSubtitle: {
-    fontSize: 12,
-    color: "#A5A7C2",
+    fontSize: vyteTypography.label,
+    color: vyteColors.textSecondary,
     marginTop: 2,
   },
   leaveButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 3,
+    paddingHorizontal: vyteSpacing.sm,
+    paddingVertical: vyteSpacing.xs,
+    borderRadius: vyteRadii.sm,
     borderWidth: 1,
-    borderColor: "#FF4F5E",
-    backgroundColor: "#FF4F5E",
+    borderColor: vyteColors.accent,
+    backgroundColor: vyteColors.accent,
   },
   leaveButtonLabel: {
-    fontSize: 12,
-    color: "#F5F5FA",
+    fontSize: vyteTypography.label,
+    color: vyteColors.textPrimary,
     fontWeight: "600",
   },
   vibeMembersBox: {
-    borderRadius: 3,
+    borderRadius: vyteRadii.sm,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#101018",
-    padding: 8,
+    borderColor: vyteColors.borderSubtle,
+    backgroundColor: vyteColors.surface,
+    padding: vyteSpacing.sm,
     maxHeight: 160,
   },
   vibeMembersList: {
     maxHeight: 160,
   },
   vibeMemberRow: {
-    marginBottom: 6,
+    marginBottom: vyteSpacing.xs,
   },
   vibeMemberName: {
-    fontSize: 13,
-    color: "#F5F5FA",
+    fontSize: vyteTypography.body,
+    color: vyteColors.textPrimary,
     fontWeight: "500",
   },
   vibeMemberMeta: {
-    fontSize: 11,
-    color: "#A5A7C2",
+    fontSize: vyteTypography.caption,
+    color: vyteColors.textSecondary,
   },
   entitlementsBox: {
-    marginTop: 4,
-    borderRadius: 3,
+    marginTop: vyteSpacing.xs,
+    borderRadius: vyteRadii.sm,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#151521",
-    padding: 8,
+    borderColor: vyteColors.borderSubtle,
+    backgroundColor: vyteColors.surfaceMuted,
+    padding: vyteSpacing.sm,
     maxHeight: 160,
   },
   entitlementsText: {
-    fontSize: 11,
-    color: "#A5A7C2",
+    fontSize: vyteTypography.caption,
+    color: vyteColors.textSecondary,
     fontFamily: "monospace",
   },
 });

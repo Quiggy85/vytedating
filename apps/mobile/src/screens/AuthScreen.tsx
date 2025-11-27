@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from "react-native";
+import { StyleSheet, Alert, View } from "react-native";
 import { supabase } from "../lib/supabaseClient";
+import { VyteCard, VyteButton, VyteInput, VyteScreenContainer, VyteTitleBlock } from "../components";
 
 interface AuthScreenProps {
   onAuthenticated: () => void;
@@ -50,109 +51,51 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Vyte</Text>
-        <Text style={styles.subtitle}>{mode === "signup" ? "Create account" : "Welcome back"}</Text>
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="you@example.com"
-          placeholderTextColor="#55576A"
+    <VyteScreenContainer>
+      <VyteCard>
+        <VyteTitleBlock
+          title="Vyte"
+          subtitle={mode === "signup" ? "Create account" : "Welcome back"}
         />
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
+        <VyteInput
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+        />
+
+        <VyteInput
+          label="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           placeholder="••••••••"
-          placeholderTextColor="#55576A"
         />
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleAuth} disabled={loading}>
-          <Text style={styles.primaryButtonText}>
-            {loading ? "Please wait" : mode === "signup" ? "Sign up" : "Log in"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => setMode(mode === "signup" ? "login" : "signup")}
-        >
-          <Text style={styles.secondaryButtonText}>
-            {mode === "signup" ? "Already have an account? Log in" : "New here? Create an account"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        <View style={styles.buttonStack}>
+          <VyteButton
+            label={loading ? "Please wait" : mode === "signup" ? "Sign up" : "Log in"}
+            onPress={handleAuth}
+            disabled={loading}
+          />
+          <VyteButton
+            label={
+              mode === "signup" ? "Already have an account? Log in" : "New here? Create an account"
+            }
+            onPress={() => setMode(mode === "signup" ? "login" : "signup")}
+            variant="ghost"
+          />
+        </View>
+      </VyteCard>
+    </VyteScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#060608",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  card: {
-    backgroundColor: "#101018",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    color: "#F5F5FA",
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#A5A7C2",
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 12,
-    color: "#A5A7C2",
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: "#151521",
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#F5F5FA",
-    fontSize: 14,
-  },
-  primaryButton: {
+  buttonStack: {
     marginTop: 24,
-    backgroundColor: "#FF4F5E",
-    borderRadius: 3,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#F5F5FA",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    marginTop: 16,
-  },
-  secondaryButtonText: {
-    color: "#A5A7C2",
-    fontSize: 12,
+    gap: 12,
   },
 });

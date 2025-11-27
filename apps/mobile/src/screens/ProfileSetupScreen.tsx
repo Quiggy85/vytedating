@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from "react-native";
+import { StyleSheet, Alert, ScrollView, View } from "react-native";
 import { supabase } from "../lib/supabaseClient";
 import type { UserProfile } from "@vyte/shared";
+import { VyteCard, VyteButton, VyteInput, VyteScreenContainer, VyteTitleBlock } from "../components";
 
 interface ProfileSetupScreenProps {
   apiBaseUrl: string;
@@ -76,133 +77,78 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ apiBaseU
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <VyteScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Set up your vibe</Text>
-          <Text style={styles.subtitle}>Tell Vyte who you are so we can match your energy.</Text>
+        <VyteCard>
+          <VyteTitleBlock
+            title="Set up your vibe"
+            subtitle="Tell Vyte who you are so we can match your energy."
+          />
 
-          <Text style={styles.label}>Display name</Text>
-          <TextInput
-            style={styles.input}
+          <VyteInput
+            label="Display name"
             value={displayName}
             onChangeText={setDisplayName}
             placeholder="Alex"
-            placeholderTextColor="#55576A"
           />
 
-          <Text style={styles.label}>Birthdate (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
+          <VyteInput
+            label="Birthdate (YYYY-MM-DD)"
             value={birthdate}
             onChangeText={setBirthdate}
             placeholder="1995-05-10"
-            placeholderTextColor="#55576A"
           />
 
-          <Text style={styles.label}>Gender</Text>
-          <TextInput
-            style={styles.input}
+          <VyteInput
+            label="Gender"
             value={gender}
             onChangeText={setGender}
             placeholder="Your gender"
-            placeholderTextColor="#55576A"
           />
 
-          <Text style={styles.label}>Short bio</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
+          <VyteInput
+            label="Short bio"
             value={bio}
             onChangeText={setBio}
             placeholder="Two lines that feel like you."
-            placeholderTextColor="#55576A"
             multiline
           />
 
-          <Text style={styles.label}>City</Text>
-          <TextInput
-            style={styles.input}
+          <VyteInput
+            label="City"
             value={city}
             onChangeText={setCity}
             placeholder="London"
-            placeholderTextColor="#55576A"
           />
 
-          <Text style={styles.label}>Country</Text>
-          <TextInput
-            style={styles.input}
+          <VyteInput
+            label="Country"
             value={country}
             onChangeText={setCountry}
             placeholder="United Kingdom"
-            placeholderTextColor="#55576A"
           />
 
-          <TouchableOpacity style={styles.primaryButton} onPress={handleSubmit} disabled={loading}>
-            <Text style={styles.primaryButtonText}>{loading ? "Saving" : "Save profile"}</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.buttonContainer}>
+            <VyteButton
+              label={loading ? "Saving" : "Save profile"}
+              onPress={handleSubmit}
+              disabled={loading}
+            />
+          </View>
+        </VyteCard>
       </ScrollView>
-    </SafeAreaView>
+    </VyteScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060608",
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingBottom: 24,
   },
-  card: {
-    backgroundColor: "#101018",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    padding: 24,
-  },
-  title: {
-    fontSize: 24,
-    color: "#F5F5FA",
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#A5A7C2",
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 12,
-    color: "#A5A7C2",
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: "#151521",
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#F5F5FA",
-    fontSize: 14,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  primaryButton: {
+  buttonContainer: {
     marginTop: 24,
-    backgroundColor: "#FF4F5E",
-    borderRadius: 3,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#F5F5FA",
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
