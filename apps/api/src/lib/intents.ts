@@ -83,27 +83,63 @@ export async function findNearbyUsersWithIntent(
   }
 
   const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-
-  const { data, error } = await supabaseServer
+  // First, find user intents updated recently for this intent
+  const { data: intentRows, error: intentsError } = await supabaseServer
     .from("user_intents")
-    .select(
-      "user_id, intent, updated_at, profile:user_profiles!inner(id, display_name, birthdate, gender, bio, location_lat, location_lng, location_city, location_country, created_at, updated_at)",
-    )
+    .select("user_id, intent, updated_at")
     .eq("intent", intent)
     .gte("updated_at", fourHoursAgo)
-    .eq("profile.location_city", meProfile.location_city)
-    .eq("profile.location_country", meProfile.location_country)
-    .neq("user_id", userId)
-    .limit(limit);
+    .neq("user_id", userId);
 
-  if (error) {
-    throw new Error(error.message);
+  if (intentsError) {
+    throw new Error(intentsError.message);
   }
 
-  if (!data) return [];
+  if (!intentRows || intentRows.length === 0) {
+    return [];
+  }
 
-  return data.map((row: any) => {
-    const profileRow = row.profile;
+  // Collect unique user ids and limit how many we fetch
+  const uniqueUserIds = Array.from(new Set(intentRows.map((row: any) => row.user_id)));
+
+  if (uniqueUserIds.length === 0) {
+    return [];
+  }
+
+  const { data: profileRows, error: profilesError } = await supabaseServer
+    .from("user_profiles")
+    .select(
+      "id, display_name, birthdate, gender, bio, location_lat, location_lng, location_city, location_country, created_at, updated_at",
+    )
+    .in("id", uniqueUserIds)
+    .eq("location_city", meProfile.location_city)
+    .eq("location_country", meProfile.location_country)
+    .limit(limit);
+
+  if (profilesError) {
+    throw new Error(profilesError.message);
+  }
+
+  if (!profileRows || profileRows.length === 0) {
+    return [];
+  }
+
+  const intentsByUserId = new Map<string, UserIntent>();
+  for (const row of intentRows as any[]) {
+    const mapped = mapRowToUserIntent(row);
+    // Keep the latest intent per user
+    const existing = intentsByUserId.get(mapped.userId);
+    if (!existing || existing.updatedAt < mapped.updatedAt) {
+      intentsByUserId.set(mapped.userId, mapped);
+    }
+  }
+
+  const results: Array<{ profile: UserProfile; intent: UserIntent }> = [];
+
+  for (const profileRow of profileRows as any[]) {
+    const userIntent = intentsByUserId.get(profileRow.id);
+    if (!userIntent) continue;
+
     const profile: UserProfile = {
       id: profileRow.id,
       displayName: profileRow.display_name ?? "",
@@ -118,8 +154,8 @@ export async function findNearbyUsersWithIntent(
       updatedAt: profileRow.updated_at,
     };
 
-    const userIntent = mapRowToUserIntent(row);
+    results.push({ profile, intent: userIntent });
+  }
 
-    return { profile, intent: userIntent };
-  });
+  return results.slice(0, limit);
 }
