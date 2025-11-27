@@ -1,7 +1,12 @@
-export enum IntentType {
-  LOOKING_TO_CHAT = "LOOKING_TO_CHAT",
-  WANT_TO_MEET = "WANT_TO_MEET",
-  DEEP_CONVO = "DEEP_CONVO",
-  LOW_ENERGY = "LOW_ENERGY",
-  JUST_BROWSING = "JUST_BROWSING",
+export type IntentType =
+  | "NONE"
+  | "JUST_CHAT"
+  | "DRINKS"
+  | "DATE"
+  | "SEE_WHERE_IT_GOES";
+
+export interface UserIntent {
+  userId: string;
+  intent: IntentType;
+  updatedAt: string; // ISO timestamp
 }
